@@ -1,6 +1,9 @@
 namespace Fq;
 
-readonly record struct WorkItem(string Directory, int Depth);
+sealed record AncestorNode(FileId Id, AncestorNode? Parent);
+
+/// <summary>A directory to list, with what its entries inherit: the search root, the ignore files above it and (when following links) the directories it is inside.</summary>
+readonly record struct WorkItem(string Directory, int Depth, RootInfo Root, IgnoreLevel? Ignore, AncestorNode? Ancestry);
 
 /// <summary>
 /// Per-worker queue. The owner works newest-first (depth-first, small footprint);

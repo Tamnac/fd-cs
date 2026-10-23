@@ -4,7 +4,7 @@ namespace Fq;
 
 /// <summary>
 /// Minimal directory reader on ntdll: one handle per directory, entries returned in large
-/// batches. Entries are <c>FILE_DIRECTORY_INFORMATION</c> records, exposed through <see cref="DirectoryRecord"/>.
+/// batches. Entries are <c>FILE_FULL_DIR_INFORMATION</c> records, exposed through <see cref="DirectoryRecord"/>.
 /// </summary>
 static unsafe partial class NtDirectory
 {
@@ -12,13 +12,15 @@ static unsafe partial class NtDirectory
     const uint ShareAll = 0x7;
     const uint DirectoryFileSynchronous = 0x1 | 0x20;           // FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT
     const uint CaseInsensitive = 0x40;
-    const int FileDirectoryInformation = 1;
+    const int FileIdInformation = 59;
+    const int FileFullDirectoryInformation = 2;
+    const int FileFsVolumeInformation = 1;
     const int FileFsDeviceInformation = 4;
     const int FileFsAttributeInformation = 5;
     const uint RemoteDevice = 0x10;
 
     public const int BufferSize = 8192;
-    const int RecordHeaderSize = 64;
+    const int RecordHeaderSize = 68;
 
     [StructLayout(LayoutKind.Sequential)]
     struct UnicodeString { public ushort Length, MaximumLength; public char* Buffer; }
@@ -47,6 +49,9 @@ static unsafe partial class NtDirectory
     private static partial int NtQueryVolumeInformationFile(nint handle, IoStatusBlock* status, byte* information, uint length, int infoClass);
 
     [LibraryImport("ntdll.dll")]
+    private static partial int NtQueryInformationFile(nint handle, IoStatusBlock* status, byte* information, uint length, int infoClass);
+
+    [LibraryImport("ntdll.dll")]
     public static partial int NtClose(nint handle);
 
     /// <summary>Opens a directory by its Win32 path. Returns 0 if it cannot be opened.</summary>
@@ -54,9 +59,10 @@ static unsafe partial class NtDirectory
     {
         const string DevicePrefix = @"\??\";
         const string UncPrefix = @"\??\UNC\";
-        bool unc = path.StartsWith(@"\\", StringComparison.Ordinal) && !path.StartsWith(@"\\?\", StringComparison.Ordinal);
+        bool verbatim = path.StartsWith(@"\\?\", StringComparison.Ordinal);
+        bool unc = !verbatim && path.StartsWith(@"\\", StringComparison.Ordinal);
         ReadOnlySpan<char> prefix = unc ? UncPrefix : DevicePrefix;
-        ReadOnlySpan<char> rest = unc ? path.AsSpan(2) : path;
+        ReadOnlySpan<char> rest = unc ? path.AsSpan(2) : verbatim ? path.AsSpan(4) : path;
 
         int length = prefix.Length + rest.Length;
         char[]? rented = length > 512 ? new char[length] : null;
@@ -74,12 +80,32 @@ static unsafe partial class NtDirectory
         }
     }
 
-    /// <summary>Fills the buffer with the next batch of entries. Returns its size in bytes, or -1 when the directory is exhausted.</summary>
+    /// <summary>
+    /// Reads the next batch of entries into <paramref name="buffer"/> (which must hold <see cref="BufferSize"/> bytes).
+    /// Returns its size in bytes, or -1 when the directory is exhausted.
+    /// </summary>
     public static int ReadBatch(nint handle, byte* buffer, bool restart)
     {
         IoStatusBlock status;
-        int result = NtQueryDirectoryFile(handle, 0, 0, 0, &status, buffer, BufferSize, FileDirectoryInformation, 0, 0, restart ? (byte)1 : (byte)0);
-        return result == 0 ? (int)status.Information : -1;
+        int result = NtQueryDirectoryFile(handle, 0, 0, 0, &status, buffer, BufferSize, FileFullDirectoryInformation, 0, 0, restart ? (byte)1 : (byte)0);
+        return result == 0 && status.Information > 0 ? (int)status.Information : -1;
+    }
+
+    /// <summary>Volume serial number and 128-bit file id, which together identify a directory.</summary>
+    public static bool TryGetFileId(nint handle, out FileId id)
+    {
+        IoStatusBlock status;
+        ulong* information = stackalloc ulong[3];
+        bool ok = NtQueryInformationFile(handle, &status, (byte*)information, 24, FileIdInformation) == 0;
+        id = ok ? new FileId(information[0], information[1], information[2]) : default;
+        return ok;
+    }
+
+    public static uint GetVolumeSerial(nint handle)
+    {
+        IoStatusBlock status;
+        byte* information = stackalloc byte[256];
+        return NtQueryVolumeInformationFile(handle, &status, information, 256, FileFsVolumeInformation) >= 0 ? *(uint*)(information + 8) : 0;
     }
 
     /// <summary>
@@ -105,13 +131,25 @@ static unsafe partial class NtDirectory
     }
 }
 
-/// <summary>View over one <c>FILE_DIRECTORY_INFORMATION</c> record.</summary>
+readonly record struct FileId(ulong Volume, ulong Low, ulong High);
+
+/// <summary>View over one <c>FILE_FULL_DIR_INFORMATION</c> record.</summary>
 readonly unsafe struct DirectoryRecord(byte* record)
 {
+    const uint ReparseTagNameSurrogate = 0x20000000;
+
     public uint NextEntryOffset => *(uint*)record;
     public long LastWriteTime => *(long*)(record + 24);
     public long Length => *(long*)(record + 40);
     public FileAttributes Attributes => (FileAttributes)(*(uint*)(record + 56));
-    public ReadOnlySpan<char> Name => new(record + 64, (int)(*(uint*)(record + 60) / 2));
+    public ReadOnlySpan<char> Name => new(record + 68, (int)(*(uint*)(record + 60) / 2));
     public bool IsDirectory => (Attributes & FileAttributes.Directory) != 0;
+
+    /// <summary>
+    /// Symbolic links and junctions. Other reparse points (OneDrive placeholders, deduplicated files) are
+    /// ordinary files and directories. For a reparse point the <c>EaSize</c> field holds the reparse tag.
+    /// </summary>
+    public bool IsLink => (Attributes & FileAttributes.ReparsePoint) != 0 && (*(uint*)(record + 64) & ReparseTagNameSurrogate) != 0;
+
+    public EntryKinds Kind => IsLink ? EntryKinds.Link : IsDirectory ? EntryKinds.Directory : EntryKinds.File;
 }
