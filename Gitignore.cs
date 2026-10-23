@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Text.RegularExpressions;
 
-namespace Fq;
+namespace Fd;
 
 enum IgnoreMatch { None, Ignore, Whitelist }
 
@@ -117,7 +117,7 @@ sealed class Gitignore
                     (nameGlob is null ? pathRegexes : nameRegexes).Add(index);
                 }
             }
-            catch (Exception e) when (e is FqException or ArgumentException)
+            catch (Exception e) when (e is FdException or ArgumentException)
             {
                 // A malformed pattern is dropped, like in git.
             }

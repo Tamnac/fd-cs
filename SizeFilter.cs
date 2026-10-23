@@ -1,11 +1,11 @@
-namespace Fq;
+namespace Fd;
 
 /// <summary>A -S constraint: <c>+n</c> at least, <c>-n</c> at most, <c>n</c> exactly.</summary>
 readonly record struct SizeFilter(char Sign, ulong Limit)
 {
     public static SizeFilter Parse(string text)
     {
-        UsageException Invalid() => new($"invalid value '{text}' for '--size <size>': '{text}' is not a valid size constraint. See 'fq --help'.");
+        UsageException Invalid() => new($"invalid value '{text}' for '--size <size>': '{text}' is not a valid size constraint. See 'fd --help'.");
 
         int p = 0;
         char sign = '=';

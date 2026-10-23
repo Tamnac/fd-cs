@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Fq;
+namespace Fd;
 
 /// <summary>Shared stdout. Writes are whole chunks, so lines from different threads never interleave.</summary>
 sealed class OutputSink

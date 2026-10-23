@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Fq;
+namespace Fd;
 
 /// <summary>Argument parsing with the conventions of fd's clap definition: combined short flags, --opt=value, --, overriding repeats.</summary>
 static class CommandLine

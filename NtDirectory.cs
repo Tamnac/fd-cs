@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Fq;
+namespace Fd;
 
 /// <summary>
 /// Minimal directory reader on ntdll: one handle per directory, entries returned in large

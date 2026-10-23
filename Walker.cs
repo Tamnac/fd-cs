@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Fq;
+namespace Fd;
 
 /// <summary>
 /// Parallel directory walk on dedicated threads. Each worker owns a deque of directories, and
@@ -93,7 +93,7 @@ sealed unsafe class Walker
 
     void ReportUnreadable(string directory)
     {
-        if (options.ShowErrors) Console.Error.WriteLine($"[fq error]: Cannot read directory '{directory}'");
+        if (options.ShowErrors) Console.Error.WriteLine($"[fd error]: Cannot read directory '{directory}'");
     }
 
     sealed class Worker(Walker walker, int id)

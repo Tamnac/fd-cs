@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Fq;
+namespace Fd;
 
 /// <summary>
 /// A template with the placeholders <c>{}</c> (path), <c>{/}</c> (file name), <c>{//}</c> (parent directory),

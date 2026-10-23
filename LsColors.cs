@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace Fq;
+namespace Fd;
 
 /// <summary>A terminal style as <c>LS_COLORS</c> describes it, written the way fd's ANSI library does.</summary>
 readonly record struct AnsiStyle(string Prefix)

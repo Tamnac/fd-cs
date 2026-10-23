@@ -1,4 +1,4 @@
-namespace Fq;
+namespace Fd;
 
 enum When { Auto, Always, Never }
 
@@ -6,7 +6,7 @@ enum When { Auto, Always, Never }
 sealed class UsageException(string message) : Exception(message);
 
 /// <summary>A problem that makes the search impossible, e.g. a bad regex. Exit status 1.</summary>
-sealed class FqException(string message) : Exception(message);
+sealed class FdException(string message) : Exception(message);
 
 sealed class Options
 {
@@ -40,10 +40,10 @@ sealed class Options
     public bool ExecBatch;
     public int BatchSize;
 
-    public const string Version = "fq 1.0 (compatible with fd 10.5)";
+    public const string Version = "fd-cs 1.0 (compatible with fd 10.5)";
 
     public const string Usage = """
-        Usage: fq [OPTIONS] [pattern] [path]...
+        Usage: fd [OPTIONS] [pattern] [path]...
 
         Arguments:
           [pattern]                    regular expression (glob with -g) matched against file names; default: everything

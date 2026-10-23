@@ -1,4 +1,4 @@
-namespace Fq;
+namespace Fd;
 
 /// <summary>fd's built-in palette, used when LS_COLORS is not set. The line break inside the *.xml entry is in fd's source as well and makes that entry unusable there.</summary>
 static class DefaultLsColors

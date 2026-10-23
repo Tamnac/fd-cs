@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Fq;
+namespace Fd;
 
 /// <summary>
 /// A point in time as a file time, parsed from what --changed-within / --changed-before accept: a duration
@@ -32,7 +32,7 @@ readonly record struct TimeFilter(long FileTime)
         if (text.StartsWith('@') && ulong.TryParse(text.AsSpan(1), out ulong seconds) && seconds < 253_402_300_800UL)
             return new TimeFilter(DateTime.UnixEpoch.AddSeconds(seconds).ToFileTimeUtc());
 
-        throw new FqException($"'{text}' is not a valid date or duration. See 'fq --help'.");
+        throw new FdException($"'{text}' is not a valid date or duration. See 'fd --help'.");
     }
 
     public bool IsBefore(long fileTime) => fileTime < FileTime;

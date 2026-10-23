@@ -1,12 +1,12 @@
 #!/bin/bash
-# Compares fq with the real fd on a generated fixture tree: same arguments, sorted output, exit codes.
-# usage: check.sh <fq-exe> [fixture-dir]      set BIG_ROOT=D:/ to also compare full-drive walks
-# fq runs with --no-skip, because fd has no skip list.
+# Compares fd-cs with the real fd on a generated fixture tree: same arguments, sorted output, exit codes.
+# usage: check.sh <fd-exe> [fixture-dir]      set BIG_ROOT=D:/ to also compare full-drive walks
+# fd-cs runs with --no-skip, because fd has no skip list.
 export MSYS2_ARG_CONV_EXCL='*'
 command -v fd >/dev/null || { echo "fd not found in PATH"; exit 2; }
-exe=${1:?usage: check.sh <fq-exe> [fixture-dir]}
+exe=${1:?usage: check.sh <fd-exe> [fixture-dir]}
 exe=$(realpath "$exe")
-fixture=${2:-${TMPDIR:-/tmp}/fq-fixture}
+fixture=${2:-${TMPDIR:-/tmp}/fd-fixture}
 scratch=$(mktemp -d)
 trap 'rm -rf "$scratch"' EXIT
 
@@ -51,7 +51,7 @@ fail=0
 ok() { pass=$((pass + 1)); }
 bad() { fail=$((fail + 1)); echo "FAIL: $1"; }
 
-# check <name> <args...>: run fq and fd with the same arguments in the fixture (or $WHERE) and compare output and exit status
+# check <name> <args...>: run fd-cs and the real fd with the same arguments in the fixture (or $WHERE) and compare output and exit status
 check() {
     local name=$1
     shift
@@ -60,7 +60,7 @@ check() {
     if cmp -s "$scratch/a" "$scratch/b" && cmp -s "$scratch/ra" "$scratch/rb"; then
         ok
     else
-        bad "$name  (fq rc $(cat "$scratch/ra"), fd rc $(cat "$scratch/rb"))"
+        bad "$name  (fd-cs rc $(cat "$scratch/ra"), fd rc $(cat "$scratch/rb"))"
         diff "$scratch/a" "$scratch/b" | head -${DIFF_LINES:-8}
         [ -s "$scratch/ea" ] && head -3 "$scratch/ea"
     fi

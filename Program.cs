@@ -1,5 +1,5 @@
 using System.Text;
-using Fq;
+using Fd;
 
 try
 {
@@ -50,16 +50,16 @@ catch (UsageException e)
     Console.Error.WriteLine($"error: {e.Message}\n\nFor more information, try '--help'.");
     return 2;
 }
-catch (FqException e)
+catch (FdException e)
 {
-    Console.Error.WriteLine($"[fq error]: {e.Message}");
+    Console.Error.WriteLine($"[fd error]: {e.Message}");
     return 1;
 }
 
 static void EnterBaseDirectory(Options options)
 {
     if (options.BaseDirectory is not { } directory) return;
-    if (!Directory.Exists(directory)) throw new FqException($"The '--base-directory' path '{directory}' is not a directory.");
+    if (!Directory.Exists(directory)) throw new FdException($"The '--base-directory' path '{directory}' is not a directory.");
     Directory.SetCurrentDirectory(directory);
 }
 
@@ -70,9 +70,9 @@ static void EnsurePatternsAreNotPaths(Options options)
     foreach (string pattern in options.AndPatterns.Append(options.Pattern))
     {
         if (!pattern.Contains('/') && !(pattern.Contains('\\') && Directory.Exists(pattern))) continue;
-        throw new FqException($"The search pattern '{pattern}' contains a path-separation character ('{(pattern.Contains('/') ? '/' : '\\')}') and will not lead to any search results.\n\n"
-            + $"If you want to search for all files inside the '{pattern}' directory, use a match-all pattern:\n\n  fq . '{pattern}'\n\n"
-            + $"Instead, if you want your pattern to match the full file path, use:\n\n  fq --full-path '{pattern}'");
+        throw new FdException($"The search pattern '{pattern}' contains a path-separation character ('{(pattern.Contains('/') ? '/' : '\\')}') and will not lead to any search results.\n\n"
+            + $"If you want to search for all files inside the '{pattern}' directory, use a match-all pattern:\n\n  fd . '{pattern}'\n\n"
+            + $"Instead, if you want your pattern to match the full file path, use:\n\n  fd --full-path '{pattern}'");
     }
 }
 
@@ -81,7 +81,7 @@ static char ResolveSeparator(Options options)
 {
     string? separator = options.PathSeparator ?? (Environment.GetEnvironmentVariable("MSYSTEM") is { Length: > 0 } ? "/" : null);
     if (separator is null) return '\\';
-    if (separator.Length != 1) throw new FqException($"A path separator must be exactly one byte, but the given separator is {Encoding.UTF8.GetByteCount(separator)} bytes: '{separator}'.\nIn some shells on Windows, '/' is automatically expanded. Try to use '//' instead.");
+    if (separator.Length != 1) throw new FdException($"A path separator must be exactly one byte, but the given separator is {Encoding.UTF8.GetByteCount(separator)} bytes: '{separator}'.\nIn some shells on Windows, '/' is automatically expanded. Try to use '//' instead.");
     return separator[0];
 }
 

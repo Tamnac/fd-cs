@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Text.RegularExpressions;
 
-namespace Fq;
+namespace Fd;
 
 /// <summary>A compiled search pattern. Plain literals, anchored literals and simple globs avoid the regex engine.</summary>
 abstract class NameMatcher
@@ -138,7 +138,7 @@ sealed class RegexMatcher : NameMatcher
         }
         catch (ArgumentException)
         {
-            throw new FqException($"regex parse error: invalid regular expression: {pattern}\n\nNote: You can use the '--fixed-strings' option to search for a literal string instead of a regular expression. Alternatively, you can also use the '--glob' option to match on a glob pattern.");
+            throw new FdException($"regex parse error: invalid regular expression: {pattern}\n\nNote: You can use the '--fixed-strings' option to search for a literal string instead of a regular expression. Alternatively, you can also use the '--glob' option to match on a glob pattern.");
         }
     }
 

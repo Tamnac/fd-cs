@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
 
-namespace Fq;
+namespace Fd;
 
 /// <summary>
 /// --exec runs the command templates for every result on a pool of threads, buffering the output of each run so that it is never
@@ -36,10 +36,10 @@ sealed class CommandRunner
         {
             var templates = words.Select(FormatTemplate.Parse).ToList();
             if (Batch && templates[0].HasPlaceholders)
-                throw new FqException("First argument of --exec-batch must be a fixed executable, not a placeholder");
+                throw new FdException("First argument of --exec-batch must be a fixed executable, not a placeholder");
             if (!templates.Any(t => t.HasPlaceholders)) templates.Add(FormatTemplate.Parse("{}"));
             if (Batch && templates.Count(t => t.HasPlaceholders) > 1)
-                throw new FqException("Only one placeholder allowed for batch commands");
+                throw new FdException("Only one placeholder allowed for batch commands");
             commands.Add(templates);
         }
     }
@@ -54,7 +54,7 @@ sealed class CommandRunner
         }
         catch (Win32Exception)
         {
-            throw new FqException("'fq --list-details' is not supported on Windows unless GNU 'ls' is installed.");
+            throw new FdException("'fd --list-details' is not supported on Windows unless GNU 'ls' is installed.");
         }
     }
 
@@ -139,8 +139,8 @@ sealed class CommandRunner
         catch (Win32Exception e)
         {
             Console.Error.WriteLine(e.NativeErrorCode == 2
-                ? $"[fq error]: Command not found: {words[0]}"
-                : $"[fq error]: Problem while executing command: {e.Message}");
+                ? $"[fd error]: Command not found: {words[0]}"
+                : $"[fd error]: Problem while executing command: {e.Message}");
             return false;
         }
     }

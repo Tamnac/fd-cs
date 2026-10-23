@@ -1,4 +1,4 @@
-namespace Fq;
+namespace Fd;
 
 [Flags]
 enum IgnoreFileKinds { None = 0, FdIgnore = 1, Ignore = 2, GitIgnore = 4, Git = 8, GitDirectory = 16 }
@@ -45,7 +45,7 @@ sealed class IgnoreRules
         foreach (string path in options.IgnoreFiles)
         {
             if (Gitignore.Load(path) is { } file) files.Add(file);
-            else if (!System.IO.File.Exists(path)) Console.Error.WriteLine($"[fq error]: Malformed pattern in custom ignore file. {path}: file not found.");
+            else if (!System.IO.File.Exists(path)) Console.Error.WriteLine($"[fd error]: Malformed pattern in custom ignore file. {path}: file not found.");
         }
         explicitFiles = [.. files];
 

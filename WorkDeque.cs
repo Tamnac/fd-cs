@@ -1,4 +1,4 @@
-namespace Fq;
+namespace Fd;
 
 sealed record AncestorNode(FileId Id, AncestorNode? Parent);
 

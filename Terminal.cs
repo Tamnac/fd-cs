@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace Fq;
+namespace Fd;
 
 static partial class Terminal
 {

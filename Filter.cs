@@ -1,4 +1,4 @@
-namespace Fq;
+namespace Fd;
 
 [Flags]
 enum EntryKinds { File = 1, Directory = 2, Link = 4, All = File | Directory | Link }

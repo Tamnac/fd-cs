@@ -1,4 +1,4 @@
-namespace Fq;
+namespace Fd;
 
 /// <summary>A search root: where it is, how its results are prefixed on output, and the ignore files above it.</summary>
 sealed class RootInfo
@@ -33,7 +33,7 @@ sealed class RootInfo
         {
             if (!Directory.Exists(given))
             {
-                Console.Error.WriteLine($"[fq error]: Search path '{given}' is not a directory.");
+                Console.Error.WriteLine($"[fd error]: Search path '{given}' is not a directory.");
                 continue;
             }
 
@@ -49,7 +49,7 @@ sealed class RootInfo
             roots.Add(new RootInfo { FullPath = full, Prefix = prefix });
         }
 
-        if (roots.Count == 0) throw new FqException("No valid search paths given.");
+        if (roots.Count == 0) throw new FdException("No valid search paths given.");
         return roots;
     }
 }

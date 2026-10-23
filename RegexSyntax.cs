@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Fq;
+namespace Fd;
 
 /// <summary>Bridges Rust regex syntax (what fd users write) to .NET regexes, and decides fd's "smart case".</summary>
 static class RustRegex
@@ -226,7 +226,7 @@ static class Glob
     /// <summary>
     /// <paramref name="literalSeparator"/>: wildcards do not match <c>/</c>. <paramref name="backslashEscape"/>: a backslash
     /// escapes the next character; otherwise it is a path separator, as on Windows in globset.
-    /// Throws <see cref="FqException"/> for malformed globs.
+    /// Throws <see cref="FdException"/> for malformed globs.
     /// </summary>
     public static string ToRegex(string glob, bool literalSeparator, bool backslashEscape)
     {
@@ -246,7 +246,7 @@ static class Glob
                 case '*': ParseStar(); break;
                 case '[': ParseClass(); break;
                 case '{':
-                    if (stack.Count > 1) throw new FqException($"invalid glob '{glob}': nested alternate groups are not allowed");
+                    if (stack.Count > 1) throw new FdException($"invalid glob '{glob}': nested alternate groups are not allowed");
                     stack.Add([]);
                     break;
                 case '}' when stack.Count > 1:
@@ -260,7 +260,7 @@ static class Glob
                 case '\\':
                     if (backslashEscape)
                     {
-                        if (Bump() is not { } escaped) throw new FqException($"invalid glob '{glob}': dangling '\\'");
+                        if (Bump() is not { } escaped) throw new FdException($"invalid glob '{glob}': dangling '\\'");
                         Push(new Literal(escaped));
                     }
                     else
@@ -271,7 +271,7 @@ static class Glob
                 default: Push(new Literal(c)); break;
             }
         }
-        if (stack.Count != 1) throw new FqException($"invalid glob '{glob}': unclosed alternate group; missing '}}' (maybe escape '{{' with '[{{]'?)");
+        if (stack.Count != 1) throw new FdException($"invalid glob '{glob}': unclosed alternate group; missing '}}' (maybe escape '{{' with '[{{]'?)");
 
         if (stack[0] is [RecursivePrefix]) return @"^.*\z";
         var sb = new StringBuilder("^");
@@ -331,7 +331,7 @@ static class Glob
             bool first = true, inRange = false;
             while (true)
             {
-                if (Bump() is not { } c) throw new FqException($"invalid glob '{glob}': unclosed character class; missing ']'");
+                if (Bump() is not { } c) throw new FdException($"invalid glob '{glob}': unclosed character class; missing ']'");
                 if (c == ']' && !first) break;
                 if (c == ']')
                 {
@@ -356,7 +356,7 @@ static class Glob
             void SetRangeEnd(char end)
             {
                 var (low, _) = ranges[^1];
-                if (end < low) throw new FqException($"invalid glob '{glob}': invalid range '{low}-{end}'");
+                if (end < low) throw new FdException($"invalid glob '{glob}': invalid range '{low}-{end}'");
                 ranges[^1] = (low, end);
             }
         }
