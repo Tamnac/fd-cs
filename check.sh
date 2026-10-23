@@ -45,6 +45,7 @@ make_fixture() {
 }
 
 norm() { tr '\\' '/' | tr '\0' '\n' | LC_ALL=C sort; }
+post() { if [ -n "${SPLIT:-}" ]; then tr ' ' '\n' | LC_ALL=C sort; else cat; fi; }
 pass=0
 fail=0
 ok() { pass=$((pass + 1)); }
@@ -54,8 +55,8 @@ bad() { fail=$((fail + 1)); echo "FAIL: $1"; }
 check() {
     local name=$1
     shift
-    (cd "${WHERE:-$fixture}" && "$exe" --no-skip "$@" 2>"$scratch/ea" | norm >"$scratch/a"; echo "${PIPESTATUS[0]}" >"$scratch/ra")
-    (cd "${WHERE:-$fixture}" && fd "$@" 2>"$scratch/eb" | norm >"$scratch/b"; echo "${PIPESTATUS[0]}" >"$scratch/rb")
+    (cd "${WHERE:-$fixture}" && "$exe" --no-skip "$@" 2>"$scratch/ea" | norm | post >"$scratch/a"; echo "${PIPESTATUS[0]}" >"$scratch/ra")
+    (cd "${WHERE:-$fixture}" && fd "$@" 2>"$scratch/eb" | norm | post >"$scratch/b"; echo "${PIPESTATUS[0]}" >"$scratch/rb")
     if cmp -s "$scratch/a" "$scratch/b" && cmp -s "$scratch/ra" "$scratch/rb"; then
         ok
     else
@@ -218,6 +219,28 @@ check "--path-separator" --path-separator '#' -e cs
 check "--strip-cwd-prefix" --strip-cwd-prefix -e cs
 check "--strip-cwd-prefix=never" --strip-cwd-prefix=never -e cs
 check "--color never" --color never -e cs
+check "--color always" --color always
+check "--color always -a" --color always -a -e cs
+check "--color always, root" --color always '' src
+check "--color always, dot root" --color always '' ./src
+LS_COLORS='di=1;31:*.md=4;32:*.CS=0;35:fi=0;33:ex=1' check "--color always, LS_COLORS" --color always
+LS_COLORS='' check "--color always, empty LS_COLORS" --color always
+check "--color always --format" --color always --format '{/}'
+check "--hyperlink" --hyperlink=always -e cs
+check "--hyperlink and color" --hyperlink=always --color always -e cs src
+check "--hyperlink auto" --hyperlink -e cs
+check "-x" -e cs -x echo
+check "-x placeholders" -e cs -x echo '{/}' '{//}' '{.}' '{/.}'
+check "-x two commands" -e cs -x echo a '{}' ';' -x echo b '{/}'
+check "-x -0" -0 -e cs -x echo
+check "-x -j 1" -j 1 -e cs -x echo
+check "-x failing" -e cs -x false
+check "-x missing command" -e cs -x no-such-command-here
+SPLIT=1 check "-X" -e cs -X echo
+SPLIT=1 check "-X placeholder" -e cs -X echo 'x{/}' tail
+check "-X batch-size" -e cs --batch-size 1 -X echo
+check "-X no results" zzzzqqqq -X echo
+check "-l" -e cs -l
 
 # exit status
 check "-q match" -q alpha

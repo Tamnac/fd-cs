@@ -9,16 +9,36 @@ try
 
     List<RootInfo> roots = RootInfo.Resolve(options);
     char separator = ResolveSeparator(options);
+    bool colored = UseColor(options);
     var sink = new OutputSink();
     if (options.Quiet) options.MaxResults = 1;
+    if (options.ListDetails)
+    {
+        CommandRunner.RequireLs();
+        options.Commands.Add(["ls", "-l", "-h", "-d", colored ? "--color=always" : "--color=never"]);
+        options.ExecBatch = true;
+    }
 
-    Func<ResultWriter> createWriter = options.Quiet
-        ? () => new NullWriter()
-        : () => new PlainWriter(sink, separator, options.Print0 ? '\0' : '\n');
+    CommandRunner? runner = options.Commands.Count > 0 ? new CommandRunner(options, sink, separator) : null;
+    var style = new OutputStyle(
+        options.Format is { } format ? FormatTemplate.Parse(format) : null,
+        colored ? LsColors.FromEnvironment() : null,
+        options.Hyperlink == When.Always || (options.Hyperlink == When.Auto && colored),
+        Sanitize: !Console.IsOutputRedirected,
+        separator,
+        options.Print0 ? '\0' : '\n');
+
+    Func<ResultWriter> createWriter =
+        options.Quiet ? () => new NullWriter()
+        : runner is not null ? runner.CreateWriter
+        : style is { Template: null, Colors: null, Hyperlink: false, Sanitize: false } ? () => new PlainWriter(sink, separator, style.Terminator)
+        : () => new FormattedWriter(sink, style);
 
     if (!Console.IsOutputRedirected) Console.OutputEncoding = Encoding.UTF8;
+    runner?.Start();
     long results = new Walker(options, roots, createWriter).Run();
-    return options.Quiet && results == 0 ? 1 : 0;
+    runner?.Finish();
+    return runner is not null ? runner.ExitCode : options.Quiet && results == 0 ? 1 : 0;
 }
 catch (HelpRequested help)
 {
@@ -64,3 +84,10 @@ static char ResolveSeparator(Options options)
     if (separator.Length != 1) throw new FqException($"A path separator must be exactly one byte, but the given separator is {Encoding.UTF8.GetByteCount(separator)} bytes: '{separator}'.\nIn some shells on Windows, '/' is automatically expanded. Try to use '//' instead.");
     return separator[0];
 }
+
+static bool UseColor(Options options) => options.Color switch
+{
+    When.Always => true,
+    When.Never => false,
+    _ => Environment.GetEnvironmentVariable("NO_COLOR") is not { Length: > 0 } && !Console.IsOutputRedirected && Terminal.TryEnableAnsi(),
+};
