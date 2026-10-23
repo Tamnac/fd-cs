@@ -23,7 +23,7 @@ fd --format '{/.}: {//}'    # custom output
 
 ## Performance
 
-About **1.4 to 2.1 times faster than fd 10.5.0** when searching a whole drive.
+About **1.4 to 2.1 times faster than fd 10.5.0** when searching a whole drive, and about **20-30x faster than GNU `find`** on a warm file cache and about **55x** on a cold one. This is a relevant comparison when a shell on Windows (Git Bash, as AI coding agents commonly use) has only `find` available.
 
 ```
 Full crawl, no ignore files             fd -H -I e         424k results
@@ -53,6 +53,8 @@ Defaults (see note)                     fd e                49k / 60k results
 Measurements were on Windows 11 using a ReFS Dev Drive with about 615k entries, on an i7-1165G7 with 8 logical cores.  Compared to fd 10.5.0 from scoop. Mean of 25 runs after 3 warm-up runs, measured with `hyperfine -N`, output discarded. The first three rows return identical results in both tools (`fd-cs` runs with `--no-skip`). 
 
 Note the he last row is not perfectly comparible. `fd-cs` skips a built-in list of directories by default (see below), so it returns fewer results, though the number of files scanned and thus overall it should be similar.
+
+The `find` numbers are for the Git for Windows build of GNU find 4.11 (`find D:/ -name '*e*'`, which runs through the MSYS layer): 12-14 s warm, against about 0.5-0.6 s for `fd -H -I e D:/` with fd-cs. Cold (different drive, empty file cache), `find` took 1 min 33 s and fd-cs 1.7 s. These are single wall-clock runs.
 
 Both tools are very fast, so for ordinary folders, startup cost can take a good fraction of the time and both will feel instant anyway. But hey, speed doesn’t hurt :)
 
