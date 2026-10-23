@@ -8,10 +8,10 @@ A fast file finder for Windows that follows the command line and behavior of [fd
 fd [OPTIONS] [pattern] [path]...
 ```
 
-The pattern is a regular expression matched against file names. Without it, everything is listed. Without a path, the current directory is searched.
+The pattern is a regular expression matched against file names. Without a pattern but with other options, everything is listed; without any arguments, the help is shown. Without a path, the current directory is searched.
 
 ```
-fd                          # everything below the current directory
+fd .                        # everything below the current directory
 fd '\.cs$' src              # names ending in .cs under src
 fd -g '*.{cs,md}'           # glob instead of regex
 fd -e rs -t f -S +10k       # files with extension rs, larger than 10 kB
@@ -66,6 +66,7 @@ Differences:
 
 -  `node_modules`, `.git`, `Windows`, `Program Files`, `bin`, `obj`, `dist`, `build` and 12 other directory names are not searched by default. Use `--no-skip` or `-u` if you don’t want this.
 - **No sorting.** Results are printed as they are found, so `--max-results` and `-1` return an arbitrary set of matches.
+- **No arguments** shows the help instead of listing everything. Use `fd .` to list everything.
 - **Not implemented:** `--gen-completions`, Ctrl-C handling. `--max-buffer-time` is accepted and ignored.
 - **`--list-details`** needs GNU `ls` in `PATH`.
 - **Help text and errors** are fd-cs's own (`[fd error]: ...`).

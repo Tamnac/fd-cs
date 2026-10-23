@@ -3,6 +3,7 @@ using Fd;
 
 try
 {
+    if (args.Length == 0) throw new HelpRequested(Options.Usage);
     Options options = CommandLine.Parse(args);
     EnterBaseDirectory(options);
     EnsurePatternsAreNotPaths(options);
