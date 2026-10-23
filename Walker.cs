@@ -269,7 +269,7 @@ sealed unsafe class Walker
                         && !(isDirectory && walker.options.IgnoreContain.Count > 0 && walker.HasIgnoreContainEntry(Path.Join(directory, name))))
                     {
                         bool report = inRange && filter.Matches(kind, name, entry.Length, entry.LastWriteTime)
-                            && (!filter.NeedsPath || filter.MatchesPath(kind, FullPath(directory, name)));
+                            && (!filter.NeedsPath(kind) || filter.MatchesPath(kind, FullPath(directory, name), entry.Length));
 
                         if (isDirectory && canDescend && !(report && walker.prune))
                             children.Add(new WorkItem(Path.Join(directory, name), depth, root, level, ancestry));

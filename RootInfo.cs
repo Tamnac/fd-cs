@@ -21,7 +21,7 @@ sealed class RootInfo
     public static List<RootInfo> Resolve(Options options)
     {
         bool defaultRoot = options.Paths.Count == 0;
-        bool stripCwd = defaultRoot && options.StripCwdPrefix switch
+        bool stripCwd = defaultRoot && !options.AbsolutePath && options.StripCwdPrefix switch
         {
             When.Always => true,
             When.Never => false,

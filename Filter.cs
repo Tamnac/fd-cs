@@ -61,8 +61,9 @@ sealed class Filter
         changedBefore = options.ChangedBefore;
     }
 
-    /// <summary>True if the report decision needs the entry's path: a full-path pattern or an emptiness check of a directory.</summary>
-    public bool NeedsPath => fullPath || (emptyOnly && (kinds & EntryKinds.Directory) != 0);
+    /// <summary>True if the report decision needs the entry's path: a full-path pattern, an emptiness check of a directory, or the size of a link's target.</summary>
+    public bool NeedsPath(EntryKinds kind) =>
+        fullPath || (emptyOnly && kind == EntryKinds.Directory) || (sizes.Length > 0 && kind == EntryKinds.Link);
 
     public bool IsHidden(ReadOnlySpan<char> name, FileAttributes attributes) =>
         !includeHidden && (name[0] == '.' || (attributes & FileAttributes.Hidden) != 0);
@@ -89,8 +90,9 @@ sealed class Filter
     }
 
     /// <summary>The criteria that need the path, for entries that passed <see cref="Matches"/>.</summary>
-    public bool MatchesPath(EntryKinds kind, ReadOnlySpan<char> path)
+    public bool MatchesPath(EntryKinds kind, ReadOnlySpan<char> path, long length)
     {
+        if (sizes.Length > 0 && kind == EntryKinds.Link && !(File.Exists(path.ToString()) && sizes.All(s => s.IsWithin(length)))) return false;
         if (fullPath)
         {
             foreach (NameMatcher matcher in matchers)
@@ -112,6 +114,7 @@ sealed class Filter
 
     bool SizeMatches(EntryKinds kind, long length)
     {
+        if (kind == EntryKinds.Link) return true;
         if (kind != EntryKinds.File) return false;
         foreach (SizeFilter size in sizes)
         {

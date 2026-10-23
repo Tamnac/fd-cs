@@ -71,10 +71,13 @@ sealed class IgnoreRules
         };
     }
 
-    /// <summary>The levels of the directories above a search root, outermost first.</summary>
+    /// <summary>
+    /// The levels of the directories above a search root, outermost first. Without parent ignore files their rules are not
+    /// read, but a repository above the root still makes the root's own .gitignore count.
+    /// </summary>
     public IgnoreLevel? LoadParents(string root)
     {
-        if (!readParents) return null;
+        if (!readParents && !readVcs) return null;
 
         var ancestors = new List<string>();
         for (string? directory = Path.GetDirectoryName(root); directory is not null; directory = Path.GetDirectoryName(directory))
@@ -90,7 +93,7 @@ sealed class IgnoreRules
                 if (!Path.Exists(path)) continue;
                 found |= Classify(name, Directory.Exists(path) ? FileAttributes.Directory : 0);
             }
-            level = Load(level, ancestors[i], found);
+            level = Load(level, ancestors[i], readParents ? found : found & IgnoreFileKinds.Git);
         }
         return level;
     }
