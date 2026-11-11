@@ -38,7 +38,7 @@ abstract class NameMatcher
 
         if (o.Exact) return new TextMatcher(TextMatcher.Mode.Equals, pattern, comparison);
         if (o.FixedStrings) return new TextMatcher(TextMatcher.Mode.Contains, pattern, comparison);
-        if (o.Glob) return FromGlob(pattern, regexForm, caseSensitive, comparison);
+        if (o.Glob) return FromGlob(pattern, o.FullPath ? regexForm : TrimWildcards(regexForm), caseSensitive, comparison);
 
         return TryParseLiteral(pattern, out var mode, out string? text)
             ? new TextMatcher(mode, text!, comparison)
@@ -64,6 +64,26 @@ abstract class NameMatcher
         }
 
         return new RegexMatcher(regexForm, caseSensitive);
+    }
+
+    /// <summary>A name contains no '/', so a leading or trailing <c>[^/]*</c> with its anchor never changes whether the regex finds a match.</summary>
+    static string TrimWildcards(string regex)
+    {
+        const string Wildcard = "[^/]*";
+        const string End = @"\z";
+        int start = 0, end = regex.Length;
+        if (regex.StartsWith('^'))
+        {
+            while (regex.AsSpan(start + 1).StartsWith(Wildcard)) start += Wildcard.Length;
+            if (start > 0) start++;
+        }
+        if (regex.EndsWith(End))
+        {
+            int trimmed = end - End.Length;
+            while (trimmed - start >= Wildcard.Length && regex.AsSpan(start, trimmed - start).EndsWith(Wildcard)) trimmed -= Wildcard.Length;
+            if (trimmed < end - End.Length) end = trimmed;
+        }
+        return regex[start..end];
     }
 
     /// <summary>Recognizes <c>^literal$</c>, <c>^literal</c>, <c>literal$</c> and <c>literal</c>, with escaped punctuation.</summary>
