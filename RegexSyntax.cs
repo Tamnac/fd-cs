@@ -90,8 +90,8 @@ static class RustRegex
     }
 
     /// <summary>
-    /// fd searches case-sensitively when the pattern contains an uppercase literal or a class with an uppercase range end
-    /// (<c>[A-Z]</c>, <c>\w</c>, <c>\p{Lu}</c>). This follows the same rule on the pattern text.
+    /// fd searches case-sensitively when the pattern contains an uppercase literal or a bracket class with an uppercase member or range end
+    /// (<c>[A-Z]</c>). Class escapes and names (<c>\w</c>, <c>\p{Lu}</c>, <c>[[:upper:]]</c>) do not count. This follows the same rule on the pattern text.
     /// </summary>
     public static bool HasUppercase(string pattern)
     {
@@ -144,7 +144,6 @@ static class RustRegex
                 int end = p.IndexOf(":]", j + 2, StringComparison.Ordinal);
                 if (end > 0)
                 {
-                    if (p.AsSpan(j + 2, end - j - 2) is "alpha" or "upper" or "alnum" or "word" or "xdigit") return true;
                     j = end + 1;
                     continue;
                 }
@@ -168,23 +167,17 @@ static class RustRegex
     {
         switch (p[k])
         {
-            case 'w' or 'W':
-                return true;
             case 'p' or 'P':
-                string name;
                 if (k + 1 < p.Length && p[k + 1] == '{')
                 {
                     int end = p.IndexOf('}', k);
-                    if (end < 0) return false;
-                    name = p.Substring(k + 2, end - k - 2);
-                    k = end;
+                    if (end > 0) k = end;
                 }
-                else
+                else if (k + 1 < p.Length)
                 {
-                    if (k + 1 >= p.Length) return false;
-                    name = p[++k].ToString();
+                    k++;
                 }
-                return CategoryHasUppercase(name.TrimStart('^'));
+                return false;
             case 'x' when k + 1 < p.Length && p[k + 1] == '{':
                 if (!TryReadHexBraces(p, k + 1, out int codePoint, out int close)) return false;
                 k = close;
@@ -197,16 +190,6 @@ static class RustRegex
             default:
                 return false;
         }
-    }
-
-    static bool CategoryHasUppercase(string name)
-    {
-        if (name.Length == 0) return false;
-        if (name[0] == 'L') return name is not ("Ll" or "Lowercase_Letter" or "Lowercase");
-        if (name.Length <= 2) return false;
-        return !(name.StartsWith("Number") || name.StartsWith("Punct") || name.StartsWith("Symbol") || name.StartsWith("Separator")
-            || name.StartsWith("Mark") || name.StartsWith("Control") || name.StartsWith("Other") || name.StartsWith("Decimal")
-            || name.StartsWith("Digit") || name.StartsWith("Space") || name.StartsWith("White") || name.StartsWith("Lower"));
     }
 }
 
