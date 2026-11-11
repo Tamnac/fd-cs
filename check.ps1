@@ -3,7 +3,7 @@
 Compares fd-cs with the real fd on a generated fixture tree: same arguments, sorted output, exit codes.
 
 .DESCRIPTION
-The real fd must be in PATH (and must not be the executable under test). fd-cs runs with --no-skip, because fd has no skip list.
+The real fd is .\real-fd\fd.exe if it exists, otherwise the first fd in PATH (which must not be the executable under test). fd-cs runs with --no-skip, because fd has no skip list.
 Works with Windows PowerShell 5.1 and PowerShell 7. Run it with:
     powershell -NoProfile -ExecutionPolicy Bypass -File .\check.ps1 .\out-aot\fd.exe
 
@@ -26,8 +26,11 @@ $ErrorActionPreference = 'Stop'
 
 $Exe = (Resolve-Path -LiteralPath $Exe).ProviderPath
 $Fixture = [IO.Path]::GetFullPath($Fixture)
-$RealFd = Get-Command fd -CommandType Application -ErrorAction SilentlyContinue | Where-Object { $_.Source -ne $Exe } | Select-Object -First 1 -ExpandProperty Source
-if (-not $RealFd) { Write-Host 'fd not found in PATH'; exit 2 }
+$RealFd = Join-Path $PSScriptRoot 'real-fd\fd.exe'
+if (-not (Test-Path -LiteralPath $RealFd)) {
+    $RealFd = Get-Command fd -CommandType Application -ErrorAction SilentlyContinue | Where-Object { $_.Source -ne $Exe } | Select-Object -First 1 -ExpandProperty Source
+}
+if (-not $RealFd) { Write-Host 'fd not found in real-fd or PATH'; exit 2 }
 
 $Utf8 = New-Object Text.UTF8Encoding $false
 $cafe = "caf$([char]0xE9)"
